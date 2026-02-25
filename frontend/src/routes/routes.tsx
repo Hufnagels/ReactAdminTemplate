@@ -7,6 +7,7 @@ import TypographyPage from '../pages/Typography';
 import Charts from '../pages/charts/Charts';
 import RidgelineChart from '../pages/charts/RidgelineChart';
 import UsersPage from '../pages/users/Users';
+import FileManager from '../pages/files/FileManager';
 import HistoryMap from '../pages/maps/HistoryMap';
 import GeoJsonMap from '../pages/maps/GeoJsonMap';
 import CustomMap from '../pages/maps/CustomMap';
@@ -21,6 +22,7 @@ import MapIcon from '@mui/icons-material/Map';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import PublicIcon from '@mui/icons-material/Public';
 import EditLocationAltIcon from '@mui/icons-material/EditLocationAlt';
+import FolderIcon from '@mui/icons-material/Folder';
 
 export interface RouteConfig {
   path: string;
@@ -49,7 +51,8 @@ export const routes: RouteConfig[] = [
       { path: '/charts/ridgeline', element: RidgelineChart, protected: true, icon: <ShowChartIcon />,  label: 'Ridgeline',   showInNav: true },
     ],
   },
-  { path: '/users', element: UsersPage, protected: true, icon: <SupervisorAccountIcon />, label: 'Users', showInNav: true },
+  { path: '/users', element: UsersPage,   protected: true, icon: <SupervisorAccountIcon />, label: 'Users', showInNav: true },
+  { path: '/files', element: FileManager, protected: true, icon: <FolderIcon />,            label: 'Files', showInNav: true },
   {
     path: '/maps',
     protected: true,

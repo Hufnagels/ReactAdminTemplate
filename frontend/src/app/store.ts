@@ -10,6 +10,7 @@
  *   maps   → features/maps/mapsSlice
  *   charts → features/charts/chartsSlice
  *   users  → features/users/usersSlice
+ *   files  → features/files/filesSlice
  *
  * Key exports
  *   store       – the Redux store instance (used in main.tsx Provider)
@@ -22,6 +23,7 @@ import themeReducer  from '../features/theme/themeSlice';
 import mapsReducer   from '../features/maps/mapsSlice';
 import chartsReducer from '../features/charts/chartsSlice';
 import usersReducer  from '../features/users/usersSlice';
+import filesReducer  from '../features/files/filesSlice';
 
 
 
@@ -33,6 +35,7 @@ export const store = configureStore({
     maps:   mapsReducer,
     charts: chartsReducer,
     users:  usersReducer,
+    files:  filesReducer,
   },
   devTools: import.meta.env.DEV,
   //window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
