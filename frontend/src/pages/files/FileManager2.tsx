@@ -47,8 +47,12 @@ import Stack from '@mui/material/Stack';
 import Skeleton from '@mui/material/Skeleton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
+import Alert from '@mui/material/Alert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -59,7 +63,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SearchIcon from '@mui/icons-material/Search';
 import type { RootState, AppDispatch } from '../../app/store';
 import type { FileItem } from '../../features/files/filesSlice';
-import { fetchFiles, fetchFile, uploadFile, updateFile, deleteFile } from '../../features/files/filesSlice';
+import { fetchFiles, fetchFile, uploadFile, updateFile, deleteFile, toggleFolderLock } from '../../features/files/filesSlice';
 import FileDropzone from '../../components/common/FileDropzone';
 import ImageViewer from '../../components/common/viewers/ImageViewer';
 import PdfViewer from '../../components/common/viewers/PdfViewer';
@@ -103,12 +107,29 @@ function AllFilesLabel({ count }: { count: number }) {
   );
 }
 
-function FolderLabel({ name, count }: { name: string; count: number }) {
+function FolderLabel({ name, count, locked, onToggleLock }: {
+  name:         string;
+  count:        number;
+  locked:       boolean;
+  onToggleLock: (e: React.MouseEvent) => void;
+}) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25 }}>
-      <FolderIcon sx={{ fontSize: 18, color: 'warning.main' }} />
-      <Typography variant="body2" component="span">{name}</Typography>
-      <Typography variant="caption" color="text.secondary">({count})</Typography>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25, width: '100%' }}>
+      <FolderIcon sx={{ fontSize: 18, color: locked ? 'text.disabled' : 'warning.main', flexShrink: 0 }} />
+      <Typography variant="body2" component="span" sx={{ flex: 1, color: locked ? 'text.disabled' : 'text.primary' }}>
+        {name}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>({count})</Typography>
+      <Tooltip title={locked ? 'Unlock folder' : 'Lock folder'} placement="right">
+        <IconButton
+          size="small"
+          onClick={onToggleLock}
+          sx={{ p: 0.25, ml: 0.5, flexShrink: 0 }}
+          color={locked ? 'error' : 'default'}
+        >
+          {locked ? <LockIcon sx={{ fontSize: 14 }} /> : <LockOpenIcon sx={{ fontSize: 14 }} />}
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 }
@@ -117,13 +138,14 @@ function FolderLabel({ name, count }: { name: string; count: number }) {
 interface PendingFile { file: File }
 
 function FileInfoDialog({
-  pending, onCancel, onUpload, saving, defaultFolder,
+  pending, onCancel, onUpload, saving, defaultFolder, lockedFolders,
 }: {
   pending:       PendingFile | null;
   onCancel:      () => void;
   onUpload:      (desc: string, tags: string[], project: string, folder: string) => void;
   saving:        boolean;
   defaultFolder: string;
+  lockedFolders: string[];
 }) {
   const [description, setDescription] = useState('');
   const [tags,        setTags]        = useState<string[]>([]);
@@ -136,6 +158,8 @@ function FileInfoDialog({
 
   if (!pending) return null;
   const { file } = pending;
+
+  const folderIsLocked = folder !== '' && lockedFolders.includes(folder);
 
   return (
     <Dialog open onClose={onCancel} maxWidth="sm" fullWidth>
@@ -176,13 +200,20 @@ function FileInfoDialog({
               label="Folder" size="small" sx={{ flex: 1 }}
               value={folder} onChange={(e) => setFolder(e.target.value)}
               placeholder="e.g. reports"
+              error={folderIsLocked}
             />
           </Box>
+
+          {folderIsLocked && (
+            <Alert severity="error" icon={<LockIcon fontSize="inherit" />}>
+              Folder <strong>{folder}</strong> is locked — unlock it first to upload here.
+            </Alert>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel} disabled={saving}>Cancel</Button>
-        <Button variant="contained" disabled={saving}
+        <Button variant="contained" disabled={saving || folderIsLocked}
           onClick={() => onUpload(description, tags, project, folder)}>
           {saving ? 'Uploading…' : 'Upload'}
         </Button>
@@ -257,19 +288,21 @@ function EditDialog({
 }
 
 // ── FileCard ──────────────────────────────────────────────────────────────────
-function FileCard({ file, onView, onEdit, onDelete }: {
+function FileCard({ file, onView, onEdit, onDelete, locked }: {
   file:     FileItem;
   onView:   (file: FileItem) => void;
   onEdit:   (file: FileItem) => void;
   onDelete: (id: number) => void;
+  locked:   boolean;
 }) {
   const isImage = file.mime_type.startsWith('image/');
 
   return (
     <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <CardActionArea onClick={() => onView(file)} sx={{ flex: 1 }}>
+      <CardActionArea onClick={() => onView(file)}
+        sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-start' }}>
         <Box sx={{
-          height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: 120, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           bgcolor: 'action.hover', overflow: 'hidden',
         }}>
           {isImage && file.content_base64 ? (
@@ -309,8 +342,17 @@ function FileCard({ file, onView, onEdit, onDelete }: {
       </CardActionArea>
 
       <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
-        <IconButton size="small" onClick={() => onEdit(file)}><EditIcon fontSize="small" /></IconButton>
-        <IconButton size="small" onClick={() => onDelete(file.id)}><DeleteIcon fontSize="small" /></IconButton>
+        {locked && (
+          <Tooltip title="Folder is locked">
+            <LockIcon sx={{ fontSize: 14, color: 'text.disabled', mr: 'auto', ml: 0.5 }} />
+          </Tooltip>
+        )}
+        <IconButton size="small" disabled={locked} onClick={() => onEdit(file)}>
+          <EditIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" disabled={locked} onClick={() => onDelete(file.id)}>
+          <DeleteIcon fontSize="small" />
+        </IconButton>
       </CardActions>
     </Card>
   );
@@ -319,14 +361,16 @@ function FileCard({ file, onView, onEdit, onDelete }: {
 // ── FileManager2 page ─────────────────────────────────────────────────────────
 export default function FileManager2() {
   const dispatch = useDispatch<AppDispatch>();
-  const list     = useSelector((s: RootState) => s.files.list);
-  const loading  = useSelector((s: RootState) => s.files.loading);
-  const saving   = useSelector((s: RootState) => s.files.saving);
+  const list          = useSelector((s: RootState) => s.files.list);
+  const loading       = useSelector((s: RootState) => s.files.loading);
+  const saving        = useSelector((s: RootState) => s.files.saving);
+  const lockedFolders = useSelector((s: RootState) => s.files.lockedFolders);
 
   const [queue,         setQueue]         = useState<File[]>([]);
   const [searchQuery,   setSearchQuery]   = useState('');
   const [selectedItem,  setSelectedItem]  = useState<string>('root');
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['root']);
   const [editTarget,    setEditTarget]    = useState<FileItem | null>(null);
   const [viewerFile,    setViewerFile]    = useState<FileItem | null>(null);
 
@@ -358,7 +402,7 @@ export default function FileManager2() {
   }, [list, searchQuery, currentFolder]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
-  const handleSelect = (_: React.SyntheticEvent, id: string | null) => {
+  const handleSelect = (_: React.SyntheticEvent | null, id: string | null) => {
     if (!id) return;
     setSelectedItem(id);
     setSearchQuery('');
@@ -367,6 +411,13 @@ export default function FileManager2() {
     } else {
       setCurrentFolder(id.slice('folder-'.length));
     }
+  };
+
+  const handleToggleLock = (name: string) => dispatch(toggleFolderLock(name));
+
+  const handleExpandedItemsChange = (_: React.SyntheticEvent | null, ids: string[]) => {
+    // Always keep root expanded — prevent collapse
+    setExpandedItems(ids.includes('root') ? ids : ['root', ...ids]);
   };
 
   const handleDrop = (files: File[]) => setQueue((q) => [...q, ...files]);
@@ -418,83 +469,113 @@ export default function FileManager2() {
       <Typography variant="h4" fontWeight={700} gutterBottom>
         File Manager
       </Typography>
-
+      
       {/* Dropzone */}
-      <Box sx={{ mb: 3 }}>
+      {/* <Box sx={{ mb: 3 }}>
         <FileDropzone onFiles={handleDrop} />
-      </Box>
+      </Box> */}
 
-      {/* Two-panel layout */}
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-
-        {/* ── Left: Tree panel ── */}
-        <Paper
-          variant="outlined"
-          sx={{ width: 240, flexShrink: 0, p: 1.5, position: 'sticky', top: 16 }}
-        >
-          <Typography variant="caption" color="text.secondary" fontWeight={600}
-            sx={{ textTransform: 'uppercase', letterSpacing: 0.8, px: 0.5 }}>
-            Folders
-          </Typography>
-          <Divider sx={{ my: 1 }} />
-          <SimpleTreeView
-            selectedItems={selectedItem}
-            onSelectedItemsChange={handleSelect}
-            defaultExpandedItems={['root']}
-            sx={{ '& .MuiTreeItem-root': { userSelect: 'none' } }}
-          >
-            <TreeItem
-              itemId="root"
-              label={<AllFilesLabel count={list.length} />}
+      <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 2, sm: 8, md: 12, lg: 12, xl: 16 }}>
+          {/* <Grid  size={{ xs: 12, sm: 12, md: 4, lg: 3, xl: 3 }} sx={{ display: { xs: 'none', sm: 'block' } }}> */}
+          <Grid size={{ xs: 2, sm: 4, md: 4 , lg: 3, xl: 3 }} sx={{  display: { xs: 'none', sm: 'none' , md:'block'} }}>
+                
+            <Stack
+              direction="column"
+              divider={<Divider orientation="vertical" flexItem />}
+              spacing={2}
             >
-              {folders.map((name) => (
-                <TreeItem
-                  key={name}
-                  itemId={`folder-${name}`}
-                  label={
-                    <FolderLabel
-                      name={name}
-                      count={list.filter((f) => f.folder === name).length}
-                    />
-                  }
+              {/* Toolbar: search + context label */}
+            
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                <TextField
+                  size="small"
+                  placeholder="Search files…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  sx={{ width: 260 }}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
                 />
-              ))}
-            </TreeItem>
-          </SimpleTreeView>
-        </Paper>
+                
+              </Box>
+              
+              {/* ── Left: Tree panel ── */}
+              <Paper
+                variant="outlined"
+                sx={{  flexShrink: 0, p: 1.5, position: 'sticky', top: 16 }}
+              >
+                
+                
+                <Typography variant="caption" color="text.secondary" fontWeight={600}
+                  sx={{ textTransform: 'uppercase', letterSpacing: 0.8, px: 0.5 }}>
+                  Folders
+                </Typography>
+                <Divider sx={{ my: 1 }} />
 
-        {/* ── Right: Content panel ── */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+                {searchQuery ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Searching across all folders
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      {currentFolder ? <>Folder: <strong>{currentFolder}</strong></> : 'Showing all files'}
+                    </Typography>
+                  ) }
+                <Divider sx={{ my: 1 }} />
+                <SimpleTreeView
+                  selectedItems={selectedItem}
+                  onSelectedItemsChange={handleSelect}
+                  expandedItems={expandedItems}
+                  onExpandedItemsChange={handleExpandedItemsChange}
+                  sx={{ '& .MuiTreeItem-root': { userSelect: 'none' } }}
+                >
+                  <TreeItem
+                    itemId="root"
+                    label={<AllFilesLabel count={list.length} />}
+                  >
+                    {folders.map((name) => (
+                      <TreeItem
+                        key={name}
+                        itemId={`folder-${name}`}
+                        label={
+                          <FolderLabel
+                            name={name}
+                            count={list.filter((f) => f.folder === name).length}
+                            locked={lockedFolders.includes(name)}
+                            onToggleLock={(e) => { e.stopPropagation(); handleToggleLock(name); }}
+                          />
+                        }
+                      />
+                    ))}
+                  </TreeItem>
+                </SimpleTreeView>
+              </Paper>
 
-          {/* Toolbar: search + context label */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-            <TextField
-              size="small"
-              placeholder="Search files…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ width: 260 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-            {searchQuery ? (
-              <Typography variant="body2" color="text.secondary">
-                Searching across all folders
-              </Typography>
-            ) : currentFolder ? (
-              <Typography variant="body2" color="text.secondary">
-                Folder: <strong>{currentFolder}</strong>
-              </Typography>
-            ) : null}
+              {/* Dropzone */}
+              <Box sx={{  mb: 3,display: { xs: 'none', sm: 'none' , md:'block'} }}>
+                <FileDropzone onFiles={handleDrop} />
+              </Box>
+            </Stack>
+            
+          </Grid>
+          {/* <Grid  size={{ xs: 2, sm: 4, md: 8 , lg: 9, xl: 10 }} sx={{ display: { xs: 'block', sm: 'block' } }}> */}
+          <Grid  size={{ xs: 12, sm: 12, md: 8 , lg: 9, xl: 13 }}>
+          {/* Two-panel layout */}
+      {/* <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}> */}
+
+          {/* Dropzone */}
+          <Box sx={{  mb: 3,display: { xs: 'block', sm: 'block' , md:'none'} }}>
+            <FileDropzone onFiles={handleDrop} />
           </Box>
-
+          
           {/* File grid */}
           {loading ? (
             <Grid container spacing={2}>
@@ -517,19 +598,28 @@ export default function FileManager2() {
           ) : (
             <Grid container spacing={2}>
               {filteredList.map((file) => (
-                <Grid key={file.id} size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                <Grid key={file.id} size={{ xs: 12, sm: 12, md: 6, lg: 4, xl: 3 }}>
                   <FileCard
                     file={file}
                     onView={handleView}
                     onEdit={setEditTarget}
                     onDelete={(id) => dispatch(deleteFile(id))}
+                    locked={file.folder !== '' && lockedFolders.includes(file.folder)}
                   />
                 </Grid>
               ))}
             </Grid>
           )}
-        </Box>
-      </Box>
+        {/* </Box>
+      </Box> */}
+          </Grid>
+      </Grid>
+      {/* Dropzone */}
+      {/* <Box sx={{ mb: 3 }}>
+        <FileDropzone onFiles={handleDrop} />
+      </Box> */}
+
+      
 
       {/* Dialogs */}
       <FileInfoDialog
@@ -538,6 +628,7 @@ export default function FileManager2() {
         onUpload={handleUpload}
         saving={saving}
         defaultFolder={currentFolder ?? ''}
+        lockedFolders={lockedFolders}
       />
       <EditDialog
         file={editTarget}

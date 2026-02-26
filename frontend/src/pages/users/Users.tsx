@@ -316,7 +316,7 @@ export default function UsersPage() {
           const role = cell.getValue<string>();
           const color =
             role === 'admin'  ? 'error'   :
-            role === 'editor' ? 'warning' : 'default';
+            role === 'editor' ? 'info' : 'default';
           return <Chip label={role} size="small" color={color} />;
         },
       },

@@ -54,8 +54,19 @@ export const routes: RouteConfig[] = [
     ],
   },
   { path: '/users', element: UsersPage,   protected: true, icon: <SupervisorAccountIcon />, label: 'Users', showInNav: true },
-  { path: '/files',  element: FileManager,  protected: true, icon: <FolderIcon />,     label: 'Files',    showInNav: true },
-  { path: '/files2', element: FileManager2, protected: true, icon: <FolderOpenIcon />, label: 'Files v2', showInNav: true },
+  
+  {
+    path: '/files',
+    protected: true,
+    icon: <FolderIcon />,
+    label: 'Files',
+    showInNav: true,
+    children: [
+      { path: '/files/files1',  element: FileManager,  protected: true, icon: <FolderIcon />,     label: 'Files',    showInNav: true },
+      { path: '/files/files2', element: FileManager2, protected: true, icon: <FolderOpenIcon />, label: 'Files v2', showInNav: true },
+    ],
+  },
+  
   {
     path: '/maps',
     protected: true,

@@ -21,7 +21,7 @@
  *   updateFile  – PUT  /files/{id}        (description, tags, project, folder)
  *   deleteFile  – DELETE /files/{id}
  */
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../app/store';
 
 export interface FileItem {
@@ -38,17 +38,19 @@ export interface FileItem {
 }
 
 interface FilesState {
-  list:    FileItem[];
-  loading: boolean;
-  saving:  boolean;
-  error:   string | null;
+  list:          FileItem[];
+  loading:       boolean;
+  saving:        boolean;
+  error:         string | null;
+  lockedFolders: string[];     // folder names that are locked (read-only)
 }
 
 const initialState: FilesState = {
-  list:    [],
-  loading: false,
-  saving:  false,
-  error:   null,
+  list:          [],
+  loading:       false,
+  saving:        false,
+  error:         null,
+  lockedFolders: [],
 };
 
 const API = 'http://localhost:8000/files';
@@ -127,7 +129,14 @@ export const deleteFile = createAsyncThunk(
 const filesSlice = createSlice({
   name: 'files',
   initialState,
-  reducers: {},
+  reducers: {
+    toggleFolderLock(state, action: PayloadAction<string>) {
+      const name = action.payload;
+      const idx  = state.lockedFolders.indexOf(name);
+      if (idx === -1) state.lockedFolders.push(name);
+      else            state.lockedFolders.splice(idx, 1);
+    },
+  },
   extraReducers: (builder) => {
     builder
       // fetchFiles
@@ -165,4 +174,5 @@ const filesSlice = createSlice({
   },
 });
 
+export const { toggleFolderLock } = filesSlice.actions;
 export default filesSlice.reducer;
