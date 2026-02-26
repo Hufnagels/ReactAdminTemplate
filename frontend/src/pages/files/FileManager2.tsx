@@ -1,12 +1,10 @@
 /*
- * pages/files/FileManager.tsx
+ * pages/files/FileManager2.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Purpose : Full-featured file manager page. Users drop files onto the
- *           dropzone, add description, tags, project and folder via
- *           FileInfoDialog, then the file is uploaded as a card.
- *           Files are organised into flat folders (subdirectory concept).
- *           A search bar filters by name, tags, and project in real-time.
- *           Clicking a card opens a type-appropriate viewer.
+ * Purpose : Improved file manager with a MUI X SimpleTreeView sidebar for
+ *           folder navigation. Left panel shows a hierarchical folder tree;
+ *           right panel shows the file grid with search and type-specific
+ *           viewers. Selecting a tree node filters the file grid instantly.
  *
  * Relationships
  *   Dispatches : filesSlice.{ fetchFiles, fetchFile, uploadFile, updateFile, deleteFile }
@@ -14,19 +12,22 @@
  *   Components : FileDropzone, ImageViewer, PdfViewer, SpreadsheetViewer, DocViewer
  *
  * Key sub-components (file-local)
- *   FolderCard    – clickable folder in the root view
  *   FileInfoDialog – collects metadata before upload
  *   EditDialog    – updates description / tags / project / folder
  *   FileCard      – individual file card in the grid
  *
  * Key state
- *   searchQuery   – real-time name / tag / project filter
- *   currentFolder – null = root view | string = inside that folder
+ *   selectedItem  – currently selected tree node id ('root' | 'folder-<name>')
+ *   currentFolder – null = all files | string = inside that named folder
+ *   searchQuery   – real-time name / tag / project filter (spans all folders)
  *   queue         – Files[] waiting for FileInfoDialog
  */
 import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
@@ -45,8 +46,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import Stack from '@mui/material/Stack';
 import Skeleton from '@mui/material/Skeleton';
 import InputAdornment from '@mui/material/InputAdornment';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import Link from '@mui/material/Link';
+import Divider from '@mui/material/Divider';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -55,6 +55,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import ImageIcon from '@mui/icons-material/Image';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import FolderIcon from '@mui/icons-material/Folder';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SearchIcon from '@mui/icons-material/Search';
 import type { RootState, AppDispatch } from '../../app/store';
 import type { FileItem } from '../../features/files/filesSlice';
@@ -91,18 +92,24 @@ function viewerType(mimeType: string): 'image' | 'pdf' | 'spreadsheet' | 'doc' {
   return 'doc';
 }
 
-// ── FolderCard ────────────────────────────────────────────────────────────────
-function FolderCard({ name, count, onClick }: { name: string; count: number; onClick: () => void }) {
+// ── Tree label components ─────────────────────────────────────────────────────
+function AllFilesLabel({ count }: { count: number }) {
   return (
-    <Card variant="outlined" sx={{ cursor: 'pointer' }} onClick={onClick}>
-      <CardActionArea sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <FolderIcon sx={{ fontSize: 40, color: 'warning.main' }} />
-        <Box>
-          <Typography variant="body1" fontWeight={600}>{name}</Typography>
-          <Typography variant="caption" color="text.secondary">{count} file{count !== 1 ? 's' : ''}</Typography>
-        </Box>
-      </CardActionArea>
-    </Card>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25 }}>
+      <FolderOpenIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+      <Typography variant="body2" fontWeight={600} component="span">All Files</Typography>
+      <Typography variant="caption" color="text.secondary">({count})</Typography>
+    </Box>
+  );
+}
+
+function FolderLabel({ name, count }: { name: string; count: number }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25 }}>
+      <FolderIcon sx={{ fontSize: 18, color: 'warning.main' }} />
+      <Typography variant="body2" component="span">{name}</Typography>
+      <Typography variant="caption" color="text.secondary">({count})</Typography>
+    </Box>
   );
 }
 
@@ -309,8 +316,8 @@ function FileCard({ file, onView, onEdit, onDelete }: {
   );
 }
 
-// ── FileManager page ──────────────────────────────────────────────────────────
-export default function FileManager() {
+// ── FileManager2 page ─────────────────────────────────────────────────────────
+export default function FileManager2() {
   const dispatch = useDispatch<AppDispatch>();
   const list     = useSelector((s: RootState) => s.files.list);
   const loading  = useSelector((s: RootState) => s.files.loading);
@@ -318,6 +325,7 @@ export default function FileManager() {
 
   const [queue,         setQueue]         = useState<File[]>([]);
   const [searchQuery,   setSearchQuery]   = useState('');
+  const [selectedItem,  setSelectedItem]  = useState<string>('root');
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [editTarget,    setEditTarget]    = useState<FileItem | null>(null);
   const [viewerFile,    setViewerFile]    = useState<FileItem | null>(null);
@@ -328,7 +336,7 @@ export default function FileManager() {
     if (list.length === 0) dispatch(fetchFiles());
   }, [dispatch, list.length]);
 
-  // ── Derived data ──────────────────────────────────────────────────────────
+  // ── Derived data ────────────────────────────────────────────────────────────
   const folders = useMemo(
     () => [...new Set(list.map((f) => f.folder).filter(Boolean))].sort(),
     [list]
@@ -341,15 +349,26 @@ export default function FileManager() {
         || f.name.toLowerCase().includes(q)
         || f.tags.some((t) => t.toLowerCase().includes(q))
         || f.project.toLowerCase().includes(q);
-      const matchFolder = currentFolder === null
-        ? f.folder === ''
-        : f.folder === currentFolder;
-      // When searching, ignore folder restriction so results span all folders
-      return matchSearch && (q ? true : matchFolder);
+      // When searching, show across all folders
+      if (q) return matchSearch;
+      // No search: filter by tree selection
+      if (currentFolder === null) return true;      // "All Files" node
+      return f.folder === currentFolder;
     });
   }, [list, searchQuery, currentFolder]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // ── Handlers ────────────────────────────────────────────────────────────────
+  const handleSelect = (_: React.SyntheticEvent, id: string | null) => {
+    if (!id) return;
+    setSelectedItem(id);
+    setSearchQuery('');
+    if (id === 'root') {
+      setCurrentFolder(null);
+    } else {
+      setCurrentFolder(id.slice('folder-'.length));
+    }
+  };
+
   const handleDrop = (files: File[]) => setQueue((q) => [...q, ...files]);
 
   const handleUpload = (desc: string, tags: string[], project: string, folder: string) => {
@@ -360,15 +379,15 @@ export default function FileManager() {
       const dataUrl = reader.result as string;
       const today   = new Date().toISOString().slice(0, 10);
       await dispatch(uploadFile({
-        name:            file.name,
-        mime_type:       file.type || 'application/octet-stream',
-        size:            file.size,
-        description:     desc,
+        name:           file.name,
+        mime_type:      file.type || 'application/octet-stream',
+        size:           file.size,
+        description:    desc,
         tags,
-        uploaded:        today,
+        uploaded:       today,
         project,
         folder,
-        content_base64:  dataUrl,
+        content_base64: dataUrl,
       }));
       setQueue((q) => q.slice(1));
     };
@@ -390,11 +409,9 @@ export default function FileManager() {
     setEditTarget(null);
   };
 
-  // ── Viewer routing ────────────────────────────────────────────────────────
+  // ── Viewer routing ──────────────────────────────────────────────────────────
   const vType = viewerFile ? viewerType(viewerFile.mime_type) : null;
   const vSrc  = viewerFile?.content_base64 ?? '';
-
-  const showFolders = currentFolder === null && !searchQuery && folders.length > 0;
 
   return (
     <Box>
@@ -407,92 +424,112 @@ export default function FileManager() {
         <FileDropzone onFiles={handleDrop} />
       </Box>
 
-      {/* Toolbar: search + breadcrumb */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-        <TextField
-          size="small"
-          placeholder="Search files…"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ width: 260 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+      {/* Two-panel layout */}
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
 
-        <Breadcrumbs>
-          <Link
-            component="button"
-            underline={currentFolder ? 'hover' : 'none'}
-            color={currentFolder ? 'inherit' : 'text.primary'}
-            fontWeight={currentFolder ? 400 : 600}
-            onClick={() => setCurrentFolder(null)}
-            sx={{ cursor: currentFolder ? 'pointer' : 'default', background: 'none', border: 'none', font: 'inherit' }}
-          >
-            All Files
-          </Link>
-          {currentFolder && (
-            <Typography color="text.primary" fontWeight={600}>
-              {currentFolder}
-            </Typography>
-          )}
-        </Breadcrumbs>
-      </Box>
-
-      {/* Folder cards — root view only, no active search */}
-      {showFolders && (
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          {folders.map((name) => (
-            <Grid key={name} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <FolderCard
-                name={name}
-                count={list.filter((f) => f.folder === name).length}
-                onClick={() => { setCurrentFolder(name); setSearchQuery(''); }}
-              />
-            </Grid>
-          ))}
-        </Grid>
-      )}
-
-      {/* File grid */}
-      {loading ? (
-        <Grid container spacing={2}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <Skeleton variant="rounded" height={220} />
-            </Grid>
-          ))}
-        </Grid>
-      ) : filteredList.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography color="text.secondary">
-            {searchQuery
-              ? `No files match "${searchQuery}".`
-              : currentFolder
-                ? `No files in "${currentFolder}".`
-                : 'No files yet. Drop some above to get started.'}
+        {/* ── Left: Tree panel ── */}
+        <Paper
+          variant="outlined"
+          sx={{ width: 240, flexShrink: 0, p: 1.5, position: 'sticky', top: 16 }}
+        >
+          <Typography variant="caption" color="text.secondary" fontWeight={600}
+            sx={{ textTransform: 'uppercase', letterSpacing: 0.8, px: 0.5 }}>
+            Folders
           </Typography>
-        </Box>
-      ) : (
-        <Grid container spacing={2}>
-          {filteredList.map((file) => (
-            <Grid key={file.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <FileCard
-                file={file}
-                onView={handleView}
-                onEdit={setEditTarget}
-                onDelete={(id) => dispatch(deleteFile(id))}
-              />
+          <Divider sx={{ my: 1 }} />
+          <SimpleTreeView
+            selectedItems={selectedItem}
+            onSelectedItemsChange={handleSelect}
+            defaultExpandedItems={['root']}
+            sx={{ '& .MuiTreeItem-root': { userSelect: 'none' } }}
+          >
+            <TreeItem
+              itemId="root"
+              label={<AllFilesLabel count={list.length} />}
+            >
+              {folders.map((name) => (
+                <TreeItem
+                  key={name}
+                  itemId={`folder-${name}`}
+                  label={
+                    <FolderLabel
+                      name={name}
+                      count={list.filter((f) => f.folder === name).length}
+                    />
+                  }
+                />
+              ))}
+            </TreeItem>
+          </SimpleTreeView>
+        </Paper>
+
+        {/* ── Right: Content panel ── */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+
+          {/* Toolbar: search + context label */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+            <TextField
+              size="small"
+              placeholder="Search files…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ width: 260 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            {searchQuery ? (
+              <Typography variant="body2" color="text.secondary">
+                Searching across all folders
+              </Typography>
+            ) : currentFolder ? (
+              <Typography variant="body2" color="text.secondary">
+                Folder: <strong>{currentFolder}</strong>
+              </Typography>
+            ) : null}
+          </Box>
+
+          {/* File grid */}
+          {loading ? (
+            <Grid container spacing={2}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                  <Skeleton variant="rounded" height={220} />
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      )}
+          ) : filteredList.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography color="text.secondary">
+                {searchQuery
+                  ? `No files match "${searchQuery}".`
+                  : currentFolder
+                    ? `No files in "${currentFolder}".`
+                    : 'No files yet. Drop some above to get started.'}
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              {filteredList.map((file) => (
+                <Grid key={file.id} size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                  <FileCard
+                    file={file}
+                    onView={handleView}
+                    onEdit={setEditTarget}
+                    onDelete={(id) => dispatch(deleteFile(id))}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      </Box>
 
       {/* Dialogs */}
       <FileInfoDialog

@@ -36,21 +36,21 @@ router = APIRouter()
 security = HTTPBearer()
 
 HISTORY_MARKERS = [
-    {"id": 1,  "name": "New York",    "lat": 40.71,  "lng": -74.01, "value": 1.082, "change":  0.15},
-    {"id": 2,  "name": "London",      "lat": 51.51,  "lng":  -0.13, "value": 0.856, "change": -0.23},
-    {"id": 3,  "name": "Tokyo",       "lat": 35.69,  "lng": 139.69, "value": 148.5, "change":  0.85},
-    {"id": 4,  "name": "Frankfurt",   "lat": 50.11,  "lng":   8.68, "value": 1.082, "change":  0.12},
-    {"id": 5,  "name": "Sydney",      "lat": -33.87, "lng": 151.21, "value": 1.534, "change": -0.45},
-    {"id": 6,  "name": "Toronto",     "lat": 43.65,  "lng": -79.38, "value": 1.357, "change":  0.08},
-    {"id": 7,  "name": "Singapore",   "lat":  1.35,  "lng": 103.82, "value": 1.341, "change": -0.11},
-    {"id": 8,  "name": "Zurich",      "lat": 47.38,  "lng":   8.54, "value": 0.902, "change":  0.33},
-    {"id": 9,  "name": "Hong Kong",   "lat": 22.32,  "lng": 114.17, "value": 7.823, "change": -0.62},
-    {"id": 10, "name": "Dubai",       "lat": 25.20,  "lng":  55.27, "value": 3.673, "change":  0.21},
-    {"id": 11, "name": "São Paulo",   "lat": -23.55, "lng": -46.63, "value": 5.013, "change":  0.38},
-    {"id": 12, "name": "Mumbai",      "lat": 19.08,  "lng":  72.88, "value": 83.5,  "change":  0.52},
-    {"id": 13, "name": "Shanghai",    "lat": 31.23,  "lng": 121.47, "value": 7.254, "change": -0.18},
-    {"id": 14, "name": "Johannesburg","lat": -26.20, "lng":  28.04, "value": 18.32, "change": -0.41},
-    {"id": 15, "name": "Seoul",       "lat": 37.57,  "lng": 126.98, "value": 1325.0,"change":  1.24},
+    {"id": 1,  "name": "New York",    "lat": 40.71,  "lng": -74.01, "value": 1.082, "change":  0.15, "project": "finance"},
+    {"id": 2,  "name": "London",      "lat": 51.51,  "lng":  -0.13, "value": 0.856, "change": -0.23, "project": "finance"},
+    {"id": 3,  "name": "Tokyo",       "lat": 35.69,  "lng": 139.69, "value": 148.5, "change":  0.85, "project": "analytics"},
+    {"id": 4,  "name": "Frankfurt",   "lat": 50.11,  "lng":   8.68, "value": 1.082, "change":  0.12, "project": "finance"},
+    {"id": 5,  "name": "Sydney",      "lat": -33.87, "lng": 151.21, "value": 1.534, "change": -0.45, "project": "global"},
+    {"id": 6,  "name": "Toronto",     "lat": 43.65,  "lng": -79.38, "value": 1.357, "change":  0.08, "project": "global"},
+    {"id": 7,  "name": "Singapore",   "lat":  1.35,  "lng": 103.82, "value": 1.341, "change": -0.11, "project": "analytics"},
+    {"id": 8,  "name": "Zurich",      "lat": 47.38,  "lng":   8.54, "value": 0.902, "change":  0.33, "project": "finance"},
+    {"id": 9,  "name": "Hong Kong",   "lat": 22.32,  "lng": 114.17, "value": 7.823, "change": -0.62, "project": "analytics"},
+    {"id": 10, "name": "Dubai",       "lat": 25.20,  "lng":  55.27, "value": 3.673, "change":  0.21, "project": "global"},
+    {"id": 11, "name": "São Paulo",   "lat": -23.55, "lng": -46.63, "value": 5.013, "change":  0.38, "project": "global"},
+    {"id": 12, "name": "Mumbai",      "lat": 19.08,  "lng":  72.88, "value": 83.5,  "change":  0.52, "project": "analytics"},
+    {"id": 13, "name": "Shanghai",    "lat": 31.23,  "lng": 121.47, "value": 7.254, "change": -0.18, "project": "analytics"},
+    {"id": 14, "name": "Johannesburg","lat": -26.20, "lng":  28.04, "value": 18.32, "change": -0.41, "project": "global"},
+    {"id": 15, "name": "Seoul",       "lat": 37.57,  "lng": 126.98, "value": 1325.0,"change":  1.24, "project": "analytics"},
 ]
 
 GEOJSON_DATA = {
@@ -60,7 +60,7 @@ GEOJSON_DATA = {
             "type": "Feature",
             "properties": {
                 "id": 1, "name": "North America",
-                "value": 88, "population": "370M", "gdp": "$28T", "growth": "+2.3%",
+                "value": 88, "population": "370M", "gdp": "$28T", "growth": "+2.3%", "project": "analytics",
             },
             "geometry": {
                 "type": "Polygon",
@@ -71,7 +71,7 @@ GEOJSON_DATA = {
             "type": "Feature",
             "properties": {
                 "id": 2, "name": "Western Europe",
-                "value": 92, "population": "190M", "gdp": "$8.2T", "growth": "+1.8%",
+                "value": 92, "population": "190M", "gdp": "$8.2T", "growth": "+1.8%", "project": "finance",
             },
             "geometry": {
                 "type": "Polygon",
@@ -82,7 +82,7 @@ GEOJSON_DATA = {
             "type": "Feature",
             "properties": {
                 "id": 3, "name": "Eastern Europe",
-                "value": 67, "population": "120M", "gdp": "$2.1T", "growth": "+3.1%",
+                "value": 67, "population": "120M", "gdp": "$2.1T", "growth": "+3.1%", "project": "global",
             },
             "geometry": {
                 "type": "Polygon",
@@ -93,7 +93,7 @@ GEOJSON_DATA = {
             "type": "Feature",
             "properties": {
                 "id": 4, "name": "East Asia",
-                "value": 79, "population": "1.6B", "gdp": "$18T", "growth": "+4.5%",
+                "value": 79, "population": "1.6B", "gdp": "$18T", "growth": "+4.5%", "project": "analytics",
             },
             "geometry": {
                 "type": "Polygon",
@@ -104,7 +104,7 @@ GEOJSON_DATA = {
             "type": "Feature",
             "properties": {
                 "id": 5, "name": "South Asia",
-                "value": 58, "population": "1.9B", "gdp": "$4.5T", "growth": "+6.2%",
+                "value": 58, "population": "1.9B", "gdp": "$4.5T", "growth": "+6.2%", "project": "global",
             },
             "geometry": {
                 "type": "Polygon",
@@ -115,7 +115,7 @@ GEOJSON_DATA = {
             "type": "Feature",
             "properties": {
                 "id": 6, "name": "Sub-Saharan Africa",
-                "value": 41, "population": "1.1B", "gdp": "$1.8T", "growth": "+3.7%",
+                "value": 41, "population": "1.1B", "gdp": "$1.8T", "growth": "+3.7%", "project": "global",
             },
             "geometry": {
                 "type": "Polygon",
@@ -126,7 +126,7 @@ GEOJSON_DATA = {
             "type": "Feature",
             "properties": {
                 "id": 7, "name": "Latin America",
-                "value": 54, "population": "430M", "gdp": "$4.2T", "growth": "+2.8%",
+                "value": 54, "population": "430M", "gdp": "$4.2T", "growth": "+2.8%", "project": "global",
             },
             "geometry": {
                 "type": "Polygon",
@@ -137,7 +137,7 @@ GEOJSON_DATA = {
             "type": "Feature",
             "properties": {
                 "id": 8, "name": "Middle East",
-                "value": 73, "population": "250M", "gdp": "$3.9T", "growth": "+3.4%",
+                "value": 73, "population": "250M", "gdp": "$3.9T", "growth": "+3.4%", "project": "finance",
             },
             "geometry": {
                 "type": "Polygon",
@@ -150,18 +150,18 @@ GEOJSON_DATA = {
 
 # ── Preset locations (mutable in-memory store) ────────────────────────────────
 _CUSTOM_ITEMS: list[dict[str, Any]] = [
-    {"id":  1, "name": "Eiffel Tower",      "lat":  48.858, "lng":   2.294, "type": "landmark", "description": "Paris, France"},
-    {"id":  2, "name": "Colosseum",          "lat":  41.890, "lng":  12.492, "type": "landmark", "description": "Rome, Italy"},
-    {"id":  3, "name": "Sagrada Família",    "lat":  41.404, "lng":   2.174, "type": "landmark", "description": "Barcelona, Spain"},
-    {"id":  4, "name": "Brandenburg Gate",   "lat":  52.516, "lng":  13.377, "type": "landmark", "description": "Berlin, Germany"},
-    {"id":  5, "name": "Acropolis",          "lat":  37.971, "lng":  23.726, "type": "landmark", "description": "Athens, Greece"},
-    {"id":  6, "name": "Schiphol Airport",   "lat":  52.310, "lng":   4.768, "type": "airport",  "description": "Amsterdam, Netherlands"},
-    {"id":  7, "name": "Heathrow Airport",   "lat":  51.470, "lng":  -0.454, "type": "airport",  "description": "London, UK"},
-    {"id":  8, "name": "Charles de Gaulle",  "lat":  49.009, "lng":   2.548, "type": "airport",  "description": "Paris, France"},
-    {"id":  9, "name": "Port of Rotterdam",  "lat":  51.900, "lng":   4.480, "type": "port",     "description": "Rotterdam, Netherlands"},
-    {"id": 10, "name": "Port of Antwerp",    "lat":  51.260, "lng":   4.400, "type": "port",     "description": "Antwerp, Belgium"},
-    {"id": 11, "name": "CERN",               "lat":  46.234, "lng":   6.055, "type": "research", "description": "Geneva, Switzerland"},
-    {"id": 12, "name": "ESA HQ",             "lat":  48.797, "lng":   2.223, "type": "research", "description": "Paris, France"},
+    {"id":  1, "name": "Eiffel Tower",      "lat":  48.858, "lng":   2.294, "type": "landmark", "description": "Paris, France",          "project": "infrastructure"},
+    {"id":  2, "name": "Colosseum",          "lat":  41.890, "lng":  12.492, "type": "landmark", "description": "Rome, Italy",            "project": "infrastructure"},
+    {"id":  3, "name": "Sagrada Família",    "lat":  41.404, "lng":   2.174, "type": "landmark", "description": "Barcelona, Spain",       "project": "infrastructure"},
+    {"id":  4, "name": "Brandenburg Gate",   "lat":  52.516, "lng":  13.377, "type": "landmark", "description": "Berlin, Germany",        "project": "infrastructure"},
+    {"id":  5, "name": "Acropolis",          "lat":  37.971, "lng":  23.726, "type": "landmark", "description": "Athens, Greece",         "project": "infrastructure"},
+    {"id":  6, "name": "Schiphol Airport",   "lat":  52.310, "lng":   4.768, "type": "airport",  "description": "Amsterdam, Netherlands", "project": "logistics"},
+    {"id":  7, "name": "Heathrow Airport",   "lat":  51.470, "lng":  -0.454, "type": "airport",  "description": "London, UK",             "project": "logistics"},
+    {"id":  8, "name": "Charles de Gaulle",  "lat":  49.009, "lng":   2.548, "type": "airport",  "description": "Paris, France",          "project": "logistics"},
+    {"id":  9, "name": "Port of Rotterdam",  "lat":  51.900, "lng":   4.480, "type": "port",     "description": "Rotterdam, Netherlands", "project": "logistics"},
+    {"id": 10, "name": "Port of Antwerp",    "lat":  51.260, "lng":   4.400, "type": "port",     "description": "Antwerp, Belgium",       "project": "logistics"},
+    {"id": 11, "name": "CERN",               "lat":  46.234, "lng":   6.055, "type": "research", "description": "Geneva, Switzerland",    "project": "research"},
+    {"id": 12, "name": "ESA HQ",             "lat":  48.797, "lng":   2.223, "type": "research", "description": "Paris, France",          "project": "research"},
 ]
 _next_custom_id = 13
 

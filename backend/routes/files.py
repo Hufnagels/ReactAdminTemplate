@@ -77,6 +77,8 @@ _FILE_LIST: list[dict] = [
         "description": "Project readme and notes",
         "tags": ["docs", "readme"],
         "uploaded": "2025-11-01",
+        "project": "general",
+        "folder":  "",
         "content_base64": _txt_b64,
     },
     {
@@ -87,6 +89,8 @@ _FILE_LIST: list[dict] = [
         "description": "Employee list export",
         "tags": ["hr", "data", "export"],
         "uploaded": "2025-12-15",
+        "project": "hr",
+        "folder":  "reports",
         "content_base64": _csv_b64,
     },
     {
@@ -97,6 +101,8 @@ _FILE_LIST: list[dict] = [
         "description": "Company logo placeholder",
         "tags": ["image", "brand"],
         "uploaded": "2026-01-10",
+        "project": "brand",
+        "folder":  "assets",
         "content_base64": _png_b64,
     },
 ]
@@ -111,11 +117,15 @@ class FileUpload(BaseModel):
     description:    str = ""
     tags:           List[str] = []
     uploaded:       str
+    project:        str = ""
+    folder:         str = ""
     content_base64: str
 
 class FileUpdate(BaseModel):
     description: str
     tags:        List[str]
+    project:     str = ""
+    folder:      str = ""
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 @router.get("/")
@@ -144,6 +154,8 @@ def upload_file(body: FileUpload, _user: dict = Depends(get_current_user)) -> di
         "description":    body.description,
         "tags":           body.tags,
         "uploaded":       body.uploaded,
+        "project":        body.project,
+        "folder":         body.folder,
         "content_base64": body.content_base64,
     }
     _FILE_LIST.append(new_file)
@@ -157,6 +169,8 @@ def update_file(file_id: int, body: FileUpdate, _user: dict = Depends(get_curren
         if f["id"] == file_id:
             f["description"] = body.description
             f["tags"]        = body.tags
+            f["project"]     = body.project
+            f["folder"]      = body.folder
             return {k: v for k, v in f.items() if k != "content_base64"}
     raise HTTPException(status_code=404, detail="File not found")
 

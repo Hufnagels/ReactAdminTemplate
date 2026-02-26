@@ -11,14 +11,14 @@
  *   Registered: app/store.ts (key: "files")
  *
  * Key types
- *   FileItem  – { id, name, mime_type, size, description, tags, uploaded, content_base64? }
+ *   FileItem  – { id, name, mime_type, size, description, tags, uploaded, project, folder, content_base64? }
  *   FilesState – { list, loading, saving, error }
  *
  * Thunks
  *   fetchFiles  – GET  /files/            (list without content)
  *   fetchFile   – GET  /files/{id}        (single file with content_base64)
  *   uploadFile  – POST /files/            (full payload inc. content_base64)
- *   updateFile  – PUT  /files/{id}        (description + tags only)
+ *   updateFile  – PUT  /files/{id}        (description, tags, project, folder)
  *   deleteFile  – DELETE /files/{id}
  */
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
@@ -32,6 +32,8 @@ export interface FileItem {
   description:     string;
   tags:            string[];
   uploaded:        string;
+  project:         string;   // cross-feature metadata grouping
+  folder:          string;   // subdirectory name ("" = root)
   content_base64?: string;
 }
 
@@ -93,7 +95,7 @@ export const uploadFile = createAsyncThunk(
 export const updateFile = createAsyncThunk(
   'files/updateFile',
   async (
-    payload: { id: number; description: string; tags: string[] },
+    payload: { id: number; description: string; tags: string[]; project: string; folder: string },
     { getState, rejectWithValue }
   ) => {
     const token = (getState() as RootState).auth.token;
