@@ -1,36 +1,52 @@
 ## Project structure
 ```
 ReactAdminTemplate/
-├── frontend/               # Vite + React + TS
-│   └── src/
-│       ├── app/store.ts                   # Redux store
-│       ├── features/
-│       │   ├── auth/authSlice.ts          # JWT auth state
-│       │   └── theme/themeSlice.ts        # dark/light toggle
-│       ├── theme/muiTheme.ts              # MUI orange/dark themes
-│       ├── routes/routes.tsx              # Routes config object
-│       ├── components/layout/
-│       │   ├── Sidebar.tsx                # MUI Drawer (permanent/temporary)
-│       │   ├── Header.tsx                 # AppBar + avatar dropdown
-│       │   └── MainLayout.tsx             # Layout wrapper
-│       ├── pages/
-│       │   ├── Landing.tsx                # Public landing page
-│       │   ├── SignIn.tsx                 # Auth form
-│       │   ├── Dashboard.tsx              # Stat cards + bar chart
-│       │   ├── UserAccount.tsx            # Profile editor
-│       │   ├── Typography.tsx             # All MUI type variants
-│       │   ├── Charts.tsx                 # Bar + donut (Recharts)
-│       │   ├── RidgelineChart.tsx         # D3.js joy plot
-│       │   └── Table.tsx                  # Sortable + paginated table
-│       ├── App.tsx                        # Router + protected routes
-│       └── main.tsx                       # Redux Provider entry
-└── backend/                # FastAPI
-    ├── main.py              # App + CORS
+├── backend/
+│   ├── main.py               # FastAPI app, CORS, router registration
+│   └── routes/
+│       ├── auth.py           # JWT login endpoint
+│       ├── users.py          # User CRUD + /me profile endpoints
+│       ├── maps.py           # History markers, GeoJSON, presets, drawn shapes
+│       └── files.py          # File upload / download / metadata CRUD
+│
+└── frontend/src/
+    ├── app/
+    │   └── store.ts          # Redux store (6 slices registered)
+    ├── features/
+    │   ├── auth/authSlice.ts
+    │   ├── theme/themeSlice.ts
+    │   ├── charts/chartsSlice.ts
+    │   ├── users/usersSlice.ts
+    │   ├── maps/mapsSlice.ts
+    │   └── files/filesSlice.ts
+    ├── pages/
+    │   ├── Landing.tsx
+    │   ├── SignIn.tsx
+    │   ├── Dashboard.tsx
+    │   ├── Typography.tsx
+    │   ├── charts/Charts.tsx
+    │   ├── charts/RidgelineChart.tsx
+    │   ├── users/Users.tsx
+    │   ├── users/UserAccount.tsx
+    │   ├── files/FileManager.tsx
+    │   ├── files/FileManager2.tsx
+    │   ├── maps/HistoryMap.tsx
+    │   ├── maps/GeoJsonMap.tsx
+    │   └── maps/CustomMap.tsx
+    ├── components/common/
+    │   ├── FileDropzone.tsx
+    │   ├── fuctions.tsx        # getStrength() password helper
+    │   ├── HadlingAvatars/
+    │   │   ├── AvatarDropzone.tsx
+    │   │   └── AvatarCropDialog.tsx
+    │   └── viewers/
+    │       ├── ImageViewer.tsx
+    │       ├── PdfViewer.tsx
+    │       ├── SpreadsheetViewer.tsx
+    │       └── DocViewer.tsx
     └── routes/
-        ├── auth.py          # POST /auth/login → JWT
-        └── users.py         # GET /users/me, GET /users
+        └── routes.tsx          # Route config object tree + flattenRoutes()
 ```
-
 ## To run
 ### Frontend:
 ```bash
