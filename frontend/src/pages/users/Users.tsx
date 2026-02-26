@@ -309,7 +309,17 @@ export default function UsersPage() {
         ),
       },
       { accessorKey: 'email',  header: 'Email'  },
-      { accessorKey: 'role',   header: 'Role'   },
+      {
+        accessorKey: 'role',
+        header: 'Role',
+        Cell: ({ cell }) => {
+          const role = cell.getValue<string>();
+          const color =
+            role === 'admin'  ? 'error'   :
+            role === 'editor' ? 'warning' : 'default';
+          return <Chip label={role} size="small" color={color} />;
+        },
+      },
       {
         accessorKey: 'status',
         header: 'Status',
