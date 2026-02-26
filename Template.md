@@ -1,4 +1,5 @@
 ## Project structure
+```
 ReactAdminTemplate/
 ├── frontend/               # Vite + React + TS
 │   └── src/
@@ -28,6 +29,7 @@ ReactAdminTemplate/
     └── routes/
         ├── auth.py          # POST /auth/login → JWT
         └── users.py         # GET /users/me, GET /users
+```
 
 ## To run
 ### Frontend:
