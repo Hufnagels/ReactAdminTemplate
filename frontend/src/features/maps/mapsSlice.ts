@@ -35,6 +35,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { FeatureCollection } from 'geojson';
 import axios from 'axios';
+import { VITE_APP_API_URL } from '../config';
 
 export interface HistoryMarker {
   id: number;
@@ -100,7 +101,7 @@ const initialState: MapsState = {
 // ── Auth helper ───────────────────────────────────────────────────────────────
 type AuthState = { auth: { token: string | null } };
 const hdrs = (token: string | null) => ({ Authorization: `Bearer ${token}` });
-const BASE = 'http://localhost:8000/maps';
+const BASE = `${VITE_APP_API_URL}/maps`;
 
 // ── Thunks ────────────────────────────────────────────────────────────────────
 export const fetchHistoryMarkers = createAsyncThunk(

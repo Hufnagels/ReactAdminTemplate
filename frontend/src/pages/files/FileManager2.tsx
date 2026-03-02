@@ -49,6 +49,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockIcon from '@mui/icons-material/Lock';
@@ -373,6 +374,7 @@ export default function FileManager2() {
   const [expandedItems, setExpandedItems] = useState<string[]>(['root']);
   const [editTarget,    setEditTarget]    = useState<FileItem | null>(null);
   const [viewerFile,    setViewerFile]    = useState<FileItem | null>(null);
+  const [viewError,     setViewError]     = useState<string | null>(null);
 
   const pending: PendingFile | null = queue.length > 0 ? { file: queue[0] } : null;
 
@@ -448,7 +450,11 @@ export default function FileManager2() {
   const handleView = async (file: FileItem) => {
     if (!file.content_base64) {
       const result = await dispatch(fetchFile(file.id));
-      if (fetchFile.fulfilled.match(result)) setViewerFile(result.payload);
+      if (fetchFile.fulfilled.match(result)) {
+        setViewerFile(result.payload);
+      } else {
+        setViewError(`Could not load "${file.name}" — file not found on server (HTTP 404).`);
+      }
     } else {
       setViewerFile(file);
     }
@@ -651,6 +657,18 @@ export default function FileManager2() {
         <DocViewer open onClose={() => setViewerFile(null)} src={vSrc}
           mimeType={viewerFile?.mime_type ?? ''} fileName={viewerFile?.name ?? ''} />
       )}
+
+      {/* Error snackbar */}
+      <Snackbar
+        open={viewError !== null}
+        autoHideDuration={5000}
+        onClose={() => setViewError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setViewError(null)} sx={{ width: '100%' }}>
+          {viewError}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

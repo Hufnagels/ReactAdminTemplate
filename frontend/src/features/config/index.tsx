@@ -15,3 +15,5 @@
 export const VITE_APP_NAME = import.meta.env.VITE_APP_NAME || '[Admin Dashboard]';
 
 export const PAGE_SINGIN_SUBTILE = 'A modern, reusable template for your next project.';
+
+export const VITE_APP_API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:8000';

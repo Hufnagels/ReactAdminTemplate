@@ -20,6 +20,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { VITE_APP_API_URL } from '../config';
 
 export interface User {
   id: number;
@@ -48,7 +49,7 @@ export const signIn = createAsyncThunk(
   'auth/signIn',
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://localhost:8000/auth/login', { email, password });
+      const response = await axios.post(`${VITE_APP_API_URL}/auth/login`, { email, password });
       return response.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.detail || 'Login failed');
@@ -61,7 +62,7 @@ export const fetchCurrentUser = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     const state = getState() as { auth: AuthState };
     try {
-      const response = await axios.get('http://localhost:8000/users/me', {
+      const response = await axios.get(`${VITE_APP_API_URL}/users/me`, {
         headers: { Authorization: `Bearer ${state.auth.token}` },
       });
       return response.data;
@@ -84,7 +85,7 @@ export const updateProfile = createAsyncThunk(
   ) => {
     const state = getState() as { auth: AuthState };
     try {
-      const response = await axios.put('http://localhost:8000/users/me', data, {
+      const response = await axios.put(`${VITE_APP_API_URL}/users/me`, data, {
         headers: { Authorization: `Bearer ${state.auth.token}` },
       });
       return response.data;

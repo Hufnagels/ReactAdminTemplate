@@ -23,6 +23,7 @@
  */
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../app/store';
+import { VITE_APP_API_URL } from '../config';
 
 export interface FileItem {
   id:              number;
@@ -53,7 +54,7 @@ const initialState: FilesState = {
   lockedFolders: [],
 };
 
-const API = 'http://localhost:8000/files';
+const API = `${VITE_APP_API_URL}/files`;
 const authHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 // ── Thunks ────────────────────────────────────────────────────────────────────

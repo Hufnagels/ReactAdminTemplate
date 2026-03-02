@@ -19,6 +19,7 @@
  */
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { VITE_APP_API_URL } from '../config';
 
 export interface UserRow {
   id: number;
@@ -47,7 +48,7 @@ const initialState: UsersState = {
 
 type AuthState = { auth: { token: string | null } };
 const hdrs = (token: string | null) => ({ Authorization: `Bearer ${token}` });
-const BASE = 'http://localhost:8000/users';
+const BASE = `${VITE_APP_API_URL}/users`;
 
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
