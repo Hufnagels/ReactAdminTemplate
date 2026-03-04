@@ -14,7 +14,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { toggleTheme } from '../../features/theme/themeSlice';
 import { signOut } from '../../features/auth/authSlice';
 import type { RootState, AppDispatch } from '../../app/store';
-import { DRAWER_WIDTH } from './Sidebar';
+import { MINI_DRAWER_WIDTH } from './Sidebar';
 import { VITE_APP_NAME } from '../../features/config';
 
 interface HeaderProps {
@@ -41,8 +41,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
     <AppBar
       position="fixed"
       sx={{
-        width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
-        ml: { sm: `${DRAWER_WIDTH}px` },
+        width: { sm: `calc(100% - ${MINI_DRAWER_WIDTH}px)` },
+        ml: { sm: `${MINI_DRAWER_WIDTH}px` },
       }}
     >
       <Toolbar>
@@ -50,7 +50,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           color="inherit"
           edge="start"
           onClick={onMenuClick}
-          sx={{ mr: 2, display: { sm: 'none' } }}
+          sx={{ mr: 2 }}
         >
           <MenuIcon />
         </IconButton>
